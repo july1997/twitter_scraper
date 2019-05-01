@@ -98,22 +98,23 @@ class QueueListener(StreamListener):
 
 
 def main():
-    # parser
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--lang', type=str, required=True, help='language: en/zh/ja')
-    args = parser.parse_args()
+    try:
+        # parser
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--lang', type=str, required=True, help='language: en/zh/ja')
+        args = parser.parse_args()
 
-    # open stream
-    listener = QueueListener(args)
-    stream = Stream(listener.auth, listener) #, language='zh')
+        # open stream
+        listener = QueueListener(args)
+        stream = Stream(listener.auth, listener) #, language='zh')
 
-    # [stream filter]
-    if args.lang == 'en':
-        stream.filter(locations=[-122.75,36.8,-121.75,37.8, -74,40,-73,41])  # San Francisco or New York City
-    elif args.lang == 'zh':
-        stream.filter(languages=["zh"], track=['I', 'you', 'http', 'www', 'co', '@', '#', '。', '，', '！', '.', '!', ',', ':', '：', '』', ')', '...', '我', '你', '他', '哈', '的', '是', '人', '-', '/'])
-    elif args.lang == 'ja':
-        stream.filter(languages=["ja"], track=['I', 'you', 'http', 'www', 'co', '@', '#', '。', '，', '！', '.', '!', ',', ':', '：', '』', ')', '...'])
+        # [stream filter]
+        if args.lang == 'en':
+            stream.filter(locations=[-122.75,36.8,-121.75,37.8, -74,40,-73,41])  # San Francisco or New York City
+        elif args.lang == 'zh':
+            stream.filter(languages=["zh"], track=['I', 'you', 'http', 'www', 'co', '@', '#', '。', '，', '！', '.', '!', ',', ':', '：', '』', ')', '...', '我', '你', '他', '哈', '的', '是', '人', '-', '/'])
+        elif args.lang == 'ja':
+            stream.filter(languages=["ja"], track=['I', 'you', 'http', 'www', 'co', '@', '#', '。', '，', '！', '.', '!', ',', ':', '：', '』', ')', '...'])
     # stream.filter(locations=[-122.75,36.8,-121.75,37.8])  # San Francisco
     # stream.filter(locations=[-74,40,-73,41])  # New York City
     # stream.filter(languages=["en"], track=['python', 'obama', 'trump'])
@@ -121,22 +122,24 @@ def main():
     # stream.filter(languages=["zh"], locations=[-180,-90,180,90])
     # stream.filter(languages=["ja"], track=['バイト'])
 
-    try:
         while True:
-            try:
-                stream.sample()  # blocking!
-            except KeyboardInterrupt:
-                print('KEYBOARD INTERRUPT')
-                return
-            except (socket.error, http.client.HTTPException):
-                global tcpip_delay
-                print('TCP/IP Error: Restarting after %.2f seconds.' % tcpip_delay)
-                time.sleep(min(tcpip_delay, MAX_TCPIP_TIMEOUT))
-                tcpip_delay += 0.25
+            stream.sample()  # blocking!
+
+    except KeyboardInterrupt:
+        print('KEYBOARD INTERRUPT')
+        return
+    except (socket.error, http.client.HTTPException):
+        global tcpip_delay
+        print('TCP/IP Error: Restarting after %.2f seconds.' % tcpip_delay)
+        time.sleep(min(tcpip_delay, MAX_TCPIP_TIMEOUT))
+        tcpip_delay += 0.25
+    except:
+        print('Connection disconnection. Restarting...')
+        sys.exit(main())
+
     finally:
         stream.disconnect()
         print('Exit successful, corpus dumped in %s' % (listener.dumpfile))
-
 
 if __name__ == '__main__':
     sys.exit(main())
